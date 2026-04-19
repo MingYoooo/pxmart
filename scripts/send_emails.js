@@ -44,21 +44,24 @@ async function sendDailyDeals() {
     }
 
     try {
-      // B. 處理喜好類別
-      const favoriteList = user.favorites.split(/[、,]/).map(item => item.trim());
+      // B. 處理喜好類別：將「休閒食品,泡麵」拆分成陣列 ['休閒食品', '泡麵']
+      const favoriteList = user.favorites.split(/[、,]/).map(item => item.trim()).filter(item => item !== "");
 
       // C. 查詢該用戶感興趣的優惠商品
+      // 使用 or 與 ilike 達成「模糊匹配」，只要資料庫類別包含用戶喜好字眼就抓取
+      const orFilter = favoriteList.map(fav => `類別.ilike.%${fav}%`).join(',');
+
       const { data: products, error: prodError } = await supabase
         .from('pxmart_data')
         .select('品名, 價格詳細, 類別')
-        .in('類別', favoriteList)
-        .order('日期', { ascending: false }) // 優先顯示最新的優惠
+        .or(orFilter) // 改用 or 模糊篩選
+        .order('日期', { ascending: false }) 
         .limit(15);
 
       if (prodError) throw prodError;
 
       if (!products || products.length === 0) {
-        console.log(`ℹ️ 用戶 ${user.nickname} (${user.email}) 的類別目前無優惠商品，跳過發信。`);
+        console.log(`ℹ️ 用戶 ${user.nickname} (${user.email}) 的類別 [${user.favorites}] 目前無優惠商品，跳過發信。`);
         continue;
       }
 
@@ -108,14 +111,13 @@ async function sendDailyDeals() {
 
       console.log(`✅ [${i + 1}/${users.length}] 郵件已發送至: ${user.email}`);
 
-      // 如果不是最後一封，等待 1.5 秒再發下一封（保護帳號不被停權）
+      // 如果不是最後一封，等待 1.5 秒再發下一封
       if (i < users.length - 1) {
         await sleep(1500); 
       }
 
     } catch (err) {
       console.error(`❌ [${i + 1}/${users.length}] 處理用戶 ${user.email} 時發生錯誤:`, err.message);
-      // 發生錯誤不中斷，繼續處理下一個使用者
     }
   }
 
