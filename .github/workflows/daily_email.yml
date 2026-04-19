@@ -1,0 +1,36 @@
+name: Daily Discount Email
+
+on:
+  schedule:
+    # 這是 Cron 語法，'0 1 * * *' 代表 UTC 01:00 = 台灣時間 09:00
+    - cron: '0 1 * * *'
+  workflow_dispatch: # 讓你可以隨時手動點按鈕測試
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd scripts
+          npm install
+
+      - name: Run send_emails.js
+        env:
+          # 這裡會從 GitHub 的 Secrets 抓取你的金鑰
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        run: |
+          cd scripts
+          node send_emails.js
