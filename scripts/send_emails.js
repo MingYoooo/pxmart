@@ -1,22 +1,13 @@
 const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 
-// 1. 初始化 Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// 2. 設定 Gmail 發信
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
 });
 
-// 輔助函數：延遲執行（避免觸發 Gmail 垃圾郵件機制）
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function sendDailyDeals() {
@@ -32,41 +23,43 @@ async function sendDailyDeals() {
     return;
   }
 
-  console.log(`預計處理 ${users.length} 個帳號...`);
-
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
-    
-    // 檢查是否有 email 與 喜好
-    if (!user.email || !user.favorites) {
-      console.log(`⚠️ 跳過用戶 ${user.nickname || '未命名'}: 無 Email 或無喜好資料`);
-      continue;
-    }
+    if (!user.email || !user.favorites) continue;
 
     try {
-      // B. 處理喜好類別：將「休閒食品,泡麵」拆分成陣列 ['休閒食品', '泡麵']
+      // B. 處理喜好類別
       const favoriteList = user.favorites.split(/[、,]/).map(item => item.trim()).filter(item => item !== "");
+      
+      let allUserProducts = [];
 
-      // C. 查詢該用戶感興趣的優惠商品
-      // 使用 or 與 ilike 達成「模糊匹配」，只要資料庫類別包含用戶喜好字眼就抓取
-      const orFilter = favoriteList.map(fav => `類別.ilike.%${fav}%`).join(',');
+      // C. 抓取所有符合條件的商品 (移除數量限制)
+      for (const fav of favoriteList) {
+        const { data: products, error: prodError } = await supabase
+          .from('pxmart_data')
+          .select('品名, 價格詳細, 類別')
+          .ilike('類別', `%${fav}%`) 
+          .order('日期', { ascending: false }); 
+          // 注意：這裡已經刪除了 .limit()，會抓出該類別「所有」商品
 
-      const { data: products, error: prodError } = await supabase
-        .from('pxmart_data')
-        .select('品名, 價格詳細, 類別')
-        .or(orFilter) // 改用 or 模糊篩選
-        .order('日期', { ascending: false }) 
-        .limit(15);
+        if (!prodError && products) {
+          allUserProducts = allUserProducts.concat(products);
+        }
+      }
 
-      if (prodError) throw prodError;
+      // D. 移除重複商品（避免同一個商品因為符合多個關鍵字而出現兩次）
+      const uniqueProducts = Array.from(new Set(allUserProducts.map(a => a.品名)))
+        .map(品名 => allUserProducts.find(a => a.品名 === 品名));
 
-      if (!products || products.length === 0) {
-        console.log(`ℹ️ 用戶 ${user.nickname} (${user.email}) 的類別 [${user.favorites}] 目前無優惠商品，跳過發信。`);
+      if (uniqueProducts.length === 0) {
+        console.log(`ℹ️ 用戶 ${user.nickname} 目前無優惠商品。`);
         continue;
       }
 
-      // D. 組合 HTML 郵件內容
-      const productRows = products.map(p => `
+      console.log(`準備發送 ${uniqueProducts.length} 筆商品給 ${user.email}`);
+
+      // E. 組合 HTML
+      const productRows = uniqueProducts.map(p => `
         <li style="margin-bottom: 12px; list-style: none; border-bottom: 1px dashed #eee; padding-bottom: 8px;">
           <span style="background: #e11d48; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">
             ${p.類別}
@@ -85,47 +78,30 @@ async function sendDailyDeals() {
           <div style="background: #e11d48; color: white; padding: 20px; text-align: center;">
             <h1 style="margin: 0; font-size: 20px;">全聯今日特惠報</h1>
           </div>
-          <div style="padding: 20px; background: #fff;">
-            <p style="font-size: 16px;"><b>${user.nickname}</b> 您好：</p>
-            <p style="color: #666;">根據您關注的類別：<span style="color: #e11d48;">${user.favorites}</span>，我們為您篩選了以下優惠：</p>
-            <ul style="padding: 0;">
-              ${productRows}
-            </ul>
-            <div style="text-align: center; margin-top: 30px;">
-              <p style="font-size: 12px; color: #999;">
-                此郵件由畢業專題自動化系統發送，請勿直接回覆。<br>
-                更新時間：${new Date().toLocaleDateString()}
-              </p>
-            </div>
+          <div style="padding: 20px;">
+            <p><b>${user.nickname}</b> 您好：</p>
+            <p>您的關注類別：<span style="color: #e11d48;">${user.favorites}</span></p>
+            <p style="color: #666; font-size: 14px;">今日共有 ${uniqueProducts.length} 件優惠商品：</p>
+            <ul style="padding: 0;">${productRows}</ul>
           </div>
         </div>
       `;
 
-      // E. 執行發送
       await transporter.sendMail({
         from: `"全聯特惠機器人" <${process.env.EMAIL_USER}>`,
         to: user.email,
-        subject: `【今日優惠】${user.nickname}，您關注的商品折扣報來囉！`,
+        subject: `【今日完整更新】${user.nickname}，您關注的類別優惠總整理！`,
         html: htmlBody,
       });
 
-      console.log(`✅ [${i + 1}/${users.length}] 郵件已發送至: ${user.email}`);
-
-      // 如果不是最後一封，等待 1.5 秒再發下一封
-      if (i < users.length - 1) {
-        await sleep(1500); 
-      }
+      console.log(`✅ 郵件已發送至: ${user.email} (共 ${uniqueProducts.length} 筆商品)`);
+      await sleep(1500); 
 
     } catch (err) {
-      console.error(`❌ [${i + 1}/${users.length}] 處理用戶 ${user.email} 時發生錯誤:`, err.message);
+      console.error(`❌ 處理用戶 ${user.email} 時錯誤:`, err.message);
     }
   }
-
-  console.log('--- 任務完成：' + new Date().toLocaleString() + ' ---');
+  console.log('--- 任務完成 ---');
 }
 
-// 執行主程式
-sendDailyDeals().catch(err => {
-  console.error('致命錯誤:', err);
-  process.exit(1);
-});
+sendDailyDeals();
