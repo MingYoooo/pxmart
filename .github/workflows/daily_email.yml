@@ -2,7 +2,7 @@ name: Daily Discount Email
 
 on:
   schedule:
-    # 這是 Cron 語法，'0 1 * * *' 代表 UTC 01:00 = 台灣時間 09:00
+    #  UTC 01:00 = 台灣時間 09:00
     - cron: '0 1 * * *'
   workflow_dispatch: # 讓你可以隨時手動點按鈕測試
 
