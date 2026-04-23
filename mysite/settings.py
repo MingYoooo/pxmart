@@ -15,7 +15,8 @@ SECRET_KEY = 'django-insecure-k3y&&9bz#ghg$6zv8@m5!6tn5b%m=#ey!em#nd1_k!0@(9w&se
 # 安全警告：正式環境中請將 DEBUG 設為 False！
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# === 這裡已經幫你修改好了 ===
+ALLOWED_HOSTS = ['pxmart-official.onrender.com', 'localhost', '127.0.0.1']
 
 # 應用程式定義
 INSTALLED_APPS = [
