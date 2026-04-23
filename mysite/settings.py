@@ -15,7 +15,7 @@ SECRET_KEY = 'django-insecure-k3y&&9bz#ghg$6zv8@m5!6tn5b%m=#ey!em#nd1_k!0@(9w&se
 # 安全警告：正式環境中請將 DEBUG 設為 False！
 DEBUG = True
 
-# === 這裡已經幫你修改好了 ===
+# 允許 Render 的專屬網址，以及本機測試網址
 ALLOWED_HOSTS = ['pxmart-official.onrender.com', 'localhost', '127.0.0.1']
 
 # 應用程式定義
@@ -31,6 +31,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- [新增] 用於在生產環境處理靜態檔案（圖片/CSS/JS）
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -92,6 +93,9 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+# [新增] 告訴 Django 在執行 collectstatic 時將所有靜態檔案收集到這個資料夾
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # 媒體檔案 (使用者上傳或下載的商品圖片)
 MEDIA_URL = '/media/'
