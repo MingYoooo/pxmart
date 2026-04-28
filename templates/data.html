@@ -43,28 +43,42 @@
             z-index: 1040;
         }
 
-        /* 類別容器優化：縮減高度並置頂 */
         .category-container {
             background: white;
-            padding: 12px 0;
+            padding: 15px 0;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             position: sticky;
             top: var(--nav-height); 
             z-index: 1030;
         }
 
-        .category-dropdown {
+        /* 複選下拉選單按鈕樣式 */
+        .category-dropdown-btn {
             border: 2px solid #eee;
             border-radius: 10px;
             padding: 10px 15px;
             font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
+            background: white;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .category-dropdown:focus {
+        .category-dropdown-btn:focus {
             border-color: var(--px-blue);
             box-shadow: 0 0 0 0.25rem rgba(0, 74, 153, 0.1);
+        }
+
+        /* 選單內部捲軸 */
+        .dropdown-menu-custom {
+            max-height: 350px;
+            overflow-y: auto;
+            width: 100%;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
         .logout-box {
@@ -109,6 +123,17 @@
             font-size: 0.8rem;
             padding: 3px 10px;
             border-radius: 4px;
+        }
+
+        /* 已選取的小標籤 */
+        .selected-badge {
+            background-color: var(--px-blue);
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin: 2px;
+            display: inline-block;
         }
 
         .update-date {
@@ -174,16 +199,33 @@
         <div class="category-container">
             <div class="container">
                 <div class="row justify-content-center align-items-center">
-                    <div class="col-auto d-none d-md-block">
-                        <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-filter me-2"></i>商品類別：</h6>
-                    </div>
-                    <div class="col-12 col-md-5">
-                        <select class="form-select category-dropdown" onchange="filterCategory(this.value)">
-                            <option value="all">全部商品顯示</option>
-                            {% for cat in categories %}
-                                <option value="{{ cat }}">{{ cat }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="col-12 col-md-6 col-lg-5">
+                        <div class="dropdown">
+                            <button class="category-dropdown-btn shadow-sm" type="button" id="multiSelectDropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                <span><i class="fas fa-filter me-2 text-primary"></i>篩選商品類別</span>
+                                <i class="fas fa-chevron-down text-muted"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-custom border-0" aria-labelledby="multiSelectDropdown">
+                                <li>
+                                    <div class="form-check mb-2 ps-4">
+                                        <input class="form-check-input" type="checkbox" id="check-all" onchange="toggleAll(this)" checked>
+                                        <label class="form-check-label fw-bold" for="check-all">全選 / 顯示全部商品</label>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                {% for cat in categories %}
+                                <li class="py-1">
+                                    <div class="form-check ps-4">
+                                        <input class="form-check-input category-checkbox" type="checkbox" value="{{ cat }}" id="cat-{{ forloop.counter }}" onchange="applyFilters()" checked>
+                                        <label class="form-check-label" for="cat-{{ forloop.counter }}">{{ cat }}</label>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div id="active-filters" class="mt-2 text-center" style="min-height: 24px;">
+                            <small class="text-muted">目前顯示全部商品</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -267,16 +309,48 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 修改後的過濾功能：現在只需要接收選中的類別值
-        function filterCategory(category) {
+        // 複選篩選邏輯
+        function applyFilters() {
+            const checkboxes = document.querySelectorAll('.category-checkbox');
+            const allCheckbox = document.getElementById('check-all');
+            const filterContainer = document.getElementById('active-filters');
+            
+            // 取得被勾選的類別清單
+            let selectedCats = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) selectedCats.push(cb.value);
+            });
+
+            // 更新全選按鈕狀態
+            allCheckbox.checked = (selectedCats.length === checkboxes.length);
+
+            // 更新下方小標籤視覺回饋
+            if (selectedCats.length === checkboxes.length || selectedCats.length === 0) {
+                filterContainer.innerHTML = '<small class="text-muted">目前顯示全部商品</small>';
+            } else {
+                filterContainer.innerHTML = selectedCats.map(cat => `<span class="selected-badge">${cat}</span>`).join('');
+            }
+
+            // 過濾商品
             const items = document.querySelectorAll('.product-item');
             items.forEach(item => {
-                if (category === 'all' || item.getAttribute('data-category') === category) {
+                const itemCat = item.getAttribute('data-category');
+                // 如果全選，或該商品類別在選中清單中
+                if (selectedCats.length === 0) {
+                    item.style.display = 'none'; // 如果一個都沒勾，隱藏全部
+                } else if (selectedCats.includes(itemCat)) {
                     item.style.display = 'block';
                 } else {
                     item.style.display = 'none';
                 }
             });
+        }
+
+        // 全選功能
+        function toggleAll(source) {
+            const checkboxes = document.querySelectorAll('.category-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            applyFilters();
         }
 
         function openProductModal(name, itemId, price) {
@@ -299,6 +373,9 @@
                 if (!offcanvasElement.classList.contains('show')) bsOffcanvas.show();
             }
         });
+        
+        // 初始載入時執行一次篩選邏輯
+        window.onload = applyFilters;
     </script>
 </body>
 </html>
