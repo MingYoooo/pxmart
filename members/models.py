@@ -2,7 +2,8 @@ from django.db import models
 
 # 1. 使用者資料
 class UserProfile(models.Model):
-    email = models.EmailField(unique=True)
+    # unique=True 確保資料庫層級不會有重複的 Email
+    email = models.EmailField(unique=True, max_length=100)
     nickname = models.CharField(max_length=100)
     gender = models.CharField(max_length=10)
     birthday = models.DateField()
@@ -20,8 +21,7 @@ class Product(models.Model):
     price_detail = models.TextField(db_column='價格詳細', verbose_name="價格詳細")
     date = models.CharField(max_length=50, db_column='日期', verbose_name="日期")
     
-    # 新增這行：對應資料庫中的圖片網址欄位
-    # 這裡的 db_column 必須與你資料庫中的實際欄位名稱一致（例如 '圖片網址'）
+    # 對應資料庫中的圖片網址欄位
     image_url = models.TextField(db_column='圖片網址', verbose_name="圖片網址", default="", blank=True, null=True)
 
     class Meta:

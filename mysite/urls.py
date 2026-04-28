@@ -28,6 +28,8 @@ urlpatterns = [
 
     # 8. 登出動作
     path('logout/', views.logout_view, name='logout'),
+
+    path('setup/', views.setup_preferences, name='setup_preferences'),
 ]
 
 # 讓 Django 在開發環境下能讀取 media 資料夾內的檔案

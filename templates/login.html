@@ -25,7 +25,6 @@
             overflow-x: hidden;
         }
 
-        /* 品牌浮水印背景 */
         body::before {
             content: "";
             position: fixed;
@@ -76,14 +75,12 @@
             gap: 12px;
         }
 
-        /* 限制登入框內圖片的大小 */
         .login-header h2 img {
-            height: 40px;  /* 你可以根據喜好調整這個數字 */
+            height: 40px;
             width: auto;
             object-fit: contain;
-}
+        }
 
-        /* 錯誤訊息紅框樣式 */
         .alert-error {
             background-color: #fff5f5;
             color: #e53e3e;
@@ -127,13 +124,6 @@
             text-decoration: none;
             font-weight: bold;
         }
-
-        .logout-box {
-            color: white !important;
-            border: 1px solid white;
-            border-radius: 4px;      
-            padding: 5px 15px !important;
-        }
     </style>
 </head>
 <body>
@@ -157,7 +147,6 @@
                 <p class="mt-2 text-muted">歡迎回來</p>
             </div>
 
-            <!-- Django 錯誤訊息顯示區塊 -->
             {% if messages %}
                 {% for message in messages %}
                     <div class="alert-error">

@@ -52,7 +52,6 @@
             z-index: 1030;
         }
 
-        /* 複選下拉選單按鈕樣式 */
         .category-dropdown-btn {
             border: 2px solid #eee;
             border-radius: 10px;
@@ -66,12 +65,6 @@
             align-items: center;
         }
 
-        .category-dropdown-btn:focus {
-            border-color: var(--px-blue);
-            box-shadow: 0 0 0 0.25rem rgba(0, 74, 153, 0.1);
-        }
-
-        /* 選單內部捲軸 */
         .dropdown-menu-custom {
             max-height: 350px;
             overflow-y: auto;
@@ -125,7 +118,6 @@
             border-radius: 4px;
         }
 
-        /* 已選取的小標籤 */
         .selected-badge {
             background-color: var(--px-blue);
             color: white;
@@ -136,9 +128,19 @@
             display: inline-block;
         }
 
-        .update-date {
-            font-size: 0.75rem;
-            color: #999;
+        /* --- 新增：鈴鐺跳動動畫 --- */
+        @keyframes bell-shake {
+            0% { transform: rotate(0); }
+            15% { transform: rotate(10deg); }
+            30% { transform: rotate(-10deg); }
+            45% { transform: rotate(5deg); }
+            60% { transform: rotate(-5deg); }
+            100% { transform: rotate(0); }
+        }
+
+        .bell-remind {
+            animation: bell-shake 2s infinite;
+            box-shadow: 0 0 0 10px rgba(218, 37, 29, 0.2);
         }
 
         .modal-img-container {
@@ -196,6 +198,26 @@
     </nav>
 
     <div class="content-wrapper">
+        {% if not user_favs %}
+        <div class="container mt-3">
+            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center justify-content-between py-3" 
+                 style="border-radius: 15px; background-color: #fff3cd;">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-circle fa-2x me-3 text-warning"></i>
+                    <div>
+                        <strong class="d-block">嘿！你還沒告訴我你想追蹤什麼</strong>
+                        <span class="small text-muted">設定喜好類別後，特價時我們才能即時通知你喔！</span>
+                    </div>
+                </div>
+                <button class="btn btn-warning btn-sm fw-bold px-3 py-2 ms-2" 
+                        style="border-radius: 10px;"
+                        data-bs-toggle="offcanvas" data-bs-target="#offcanvasSubscribe">
+                    立即設定
+                </button>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="category-container">
             <div class="container">
                 <div class="row justify-content-center align-items-center">
@@ -278,7 +300,8 @@
         </div>
     </div>
 
-    <button class="btn btn-danger float-btn shadow-lg" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSubscribe">
+    <button class="btn btn-danger float-btn shadow-lg {% if not user_favs %}bell-remind{% endif %}" 
+            type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSubscribe">
         <i class="fas fa-bell"></i>
     </button>
 
@@ -309,35 +332,29 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // 複選篩選邏輯
         function applyFilters() {
             const checkboxes = document.querySelectorAll('.category-checkbox');
             const allCheckbox = document.getElementById('check-all');
             const filterContainer = document.getElementById('active-filters');
             
-            // 取得被勾選的類別清單
             let selectedCats = [];
             checkboxes.forEach(cb => {
                 if (cb.checked) selectedCats.push(cb.value);
             });
 
-            // 更新全選按鈕狀態
             allCheckbox.checked = (selectedCats.length === checkboxes.length);
 
-            // 更新下方小標籤視覺回饋
             if (selectedCats.length === checkboxes.length || selectedCats.length === 0) {
                 filterContainer.innerHTML = '<small class="text-muted">目前顯示全部商品</small>';
             } else {
                 filterContainer.innerHTML = selectedCats.map(cat => `<span class="selected-badge">${cat}</span>`).join('');
             }
 
-            // 過濾商品
             const items = document.querySelectorAll('.product-item');
             items.forEach(item => {
                 const itemCat = item.getAttribute('data-category');
-                // 如果全選，或該商品類別在選中清單中
                 if (selectedCats.length === 0) {
-                    item.style.display = 'none'; // 如果一個都沒勾，隱藏全部
+                    item.style.display = 'none';
                 } else if (selectedCats.includes(itemCat)) {
                     item.style.display = 'block';
                 } else {
@@ -346,7 +363,6 @@
             });
         }
 
-        // 全選功能
         function toggleAll(source) {
             const checkboxes = document.querySelectorAll('.category-checkbox');
             checkboxes.forEach(cb => cb.checked = source.checked);
@@ -374,7 +390,6 @@
             }
         });
         
-        // 初始載入時執行一次篩選邏輯
         window.onload = applyFilters;
     </script>
 </body>
