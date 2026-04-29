@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <meta name="referrer" content="no-referrer" />
+    
     <title>優惠資訊 - 聯手省錢</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -128,7 +131,6 @@
             display: inline-block;
         }
 
-        /* --- 新增：鈴鐺跳動動畫 --- */
         @keyframes bell-shake {
             0% { transform: rotate(0); }
             15% { transform: rotate(10deg); }
@@ -158,6 +160,7 @@
             max-width: 100%;
             max-height: 300px;
             object-fit: contain;
+            transition: all 0.3s ease;
         }
 
         .float-btn {
@@ -258,7 +261,7 @@
                 {% for item in products %}
                 <div class="col-md-4 col-lg-3 product-item" data-category="{{ item.category }}">
                     <div class="card product-card p-3" 
-                         onclick="openProductModal('{{ item.name|escapejs }}', '{{ item.id }}', '{{ item.price_detail|escapejs }}')">
+                         onclick="openProductModal('{{ item.name|escapejs }}', '{{ item.image_url }}', '{{ item.price_detail|escapejs }}')">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <span class="category-badge">{{ item.category }}</span>
                         </div>
@@ -369,15 +372,35 @@
             applyFilters();
         }
 
-        function openProductModal(name, itemId, price) {
+        // 🌟 更新的彈窗函式：改吃 imgUrl 並加入全聯防呆
+        function openProductModal(name, imgUrl, price) {
             document.getElementById('modalProductName').innerText = name;
             document.getElementById('modalProductPrice').innerHTML = `<i class="fas fa-tag me-1"></i>${price}`;
             const imgElement = document.getElementById('modalProductImg');
-            imgElement.src = `/media/products/${itemId}.png`;
+            
+            // 如果資料庫有網址，直接塞進去
+            if (imgUrl && imgUrl !== 'None' && imgUrl !== '') {
+                imgElement.src = imgUrl;
+            } else {
+                imgElement.src = '/static/px_logo.png'; 
+                imgElement.style.maxHeight = '150px'; 
+                imgElement.style.opacity = '0.5';
+            }
+
+            // 如果全聯依然擋圖，自動換回全聯 Logo 避免破圖
             imgElement.onerror = function() {
                 this.onerror = null; 
-                this.src = 'https://via.placeholder.com/300?text=暫無商品圖片';
+                this.src = '/static/px_logo.png'; 
+                this.style.maxHeight = '150px'; 
+                this.style.opacity = '0.5'; 
             };
+            
+            // 讀取成功時確保樣式正確
+            imgElement.onload = function() {
+                this.style.maxHeight = '300px';
+                this.style.opacity = '1';
+            };
+            
             var myModal = new bootstrap.Modal(document.getElementById('productModal'));
             myModal.show();
         }
