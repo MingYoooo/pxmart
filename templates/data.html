@@ -176,6 +176,50 @@
             transition: 0.3s;
         }
 
+        /* 底部問卷區塊特製樣式 */
+        .feedback-banner {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f4f6f8 100%);
+            border: 1px solid #bbdefb;
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+        
+        .feedback-banner:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 74, 153, 0.1) !important;
+        }
+
+        /* 🌟 左下角懸浮問卷按鈕樣式 (加大版) */
+        .float-feedback-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            z-index: 1050;
+            background-color: #f39c12; 
+            color: white;
+            /* 👇 這裡加大了 padding 和字體大小 */
+            padding: 16px 32px; 
+            font-size: 1.15rem; 
+            border-radius: 35px; 
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .float-feedback-btn i {
+            /* 👇 把 Icon 也稍微放大 */
+            font-size: 1.3rem; 
+        }
+
+        .float-feedback-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(243, 156, 18, 0.4);
+            color: white;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -254,7 +298,7 @@
             </div>
         </div>
 
-        <div class="container mt-4 mb-5">
+        <div class="container mt-4 mb-4">
             <div class="row g-4" id="product-grid">
                 {% for item in products %}
                 <div class="col-md-4 col-lg-3 product-item" data-category="{{ item.category }}">
@@ -279,7 +323,34 @@
                 {% endfor %}
             </div>
         </div>
+
+        <!-- 底部問卷區塊 -->
+        <div class="container mb-5 pb-4">
+            <div class="feedback-banner p-4 text-center shadow-sm">
+                <h4 class="fw-bold mb-2" style="color: var(--px-blue);">
+                    <i class="fas fa-comment-dots me-2"></i>享受優惠了嗎？告訴我們你的心得！
+                </h4>
+                <p class="text-muted mb-4">你的寶貴回饋是我們提供更好服務的動力，只需要 1 分鐘的時間！</p>
+                <a href="https://forms.gle/ivptuLNKV4ZGZB7DA" target="_blank" 
+                   class="btn text-white fw-bold px-4 py-2" 
+                   style="background-color: var(--px-blue); border-radius: 30px;">
+                    <i class="fas fa-paper-plane me-2"></i>前往填寫問卷
+                </a>
+            </div>
+        </div>
+
     </div>
+
+    <!-- 🌟 左下角懸浮回饋按鈕 (加大版) -->
+    <a href="https://forms.gle/ivptuLNKV4ZGZB7DA" target="_blank" class="float-feedback-btn">
+        <i class="fas fa-clipboard-list me-2"></i>意見回饋
+    </a>
+
+    <!-- 原本的右下角小鈴鐺 -->
+    <button class="btn btn-danger float-btn shadow-lg {% if not user_favs %}bell-remind{% endif %}" 
+            type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSubscribe">
+        <i class="fas fa-bell"></i>
+    </button>
 
     <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -301,11 +372,6 @@
         </div>
     </div>
 
-    <button class="btn btn-danger float-btn shadow-lg {% if not user_favs %}bell-remind{% endif %}" 
-            type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasSubscribe">
-        <i class="fas fa-bell"></i>
-    </button>
-
     <div class="offcanvas offcanvas-bottom mx-auto shadow-lg" tabindex="-1" id="offcanvasSubscribe" 
          style="height: 50vh; max-width: 800px; border-radius: 25px 25px 0 0; border: none;">
         <div class="offcanvas-header border-bottom d-flex justify-content-center position-relative">
@@ -313,7 +379,6 @@
             <button type="button" class="btn-close position-absolute" data-bs-dismiss="offcanvas" aria-label="Close" style="right: 20px;"></button>
         </div>
         <div class="offcanvas-body">
-            <!-- 🚨 修正的地方：加入了 {% csrf_token %} -->
             <form action="/save_favorites/" method="POST" class="container text-center">
                 {% csrf_token %}
                 <div class="row g-3 justify-content-center">
@@ -371,13 +436,11 @@
             applyFilters();
         }
 
-        // 🌟 更新的彈窗函式：改吃 imgUrl 並加入全聯防呆
         function openProductModal(name, imgUrl, price) {
             document.getElementById('modalProductName').innerText = name;
             document.getElementById('modalProductPrice').innerHTML = `<i class="fas fa-tag me-1"></i>${price}`;
             const imgElement = document.getElementById('modalProductImg');
             
-            // 如果資料庫有網址，直接塞進去
             if (imgUrl && imgUrl !== 'None' && imgUrl !== '') {
                 imgElement.src = imgUrl;
             } else {
@@ -386,7 +449,6 @@
                 imgElement.style.opacity = '0.5';
             }
 
-            // 如果全聯依然擋圖，自動換回全聯 Logo 避免破圖
             imgElement.onerror = function() {
                 this.onerror = null; 
                 this.src = '/static/px_logo.png'; 
@@ -394,7 +456,6 @@
                 this.style.opacity = '0.5'; 
             };
             
-            // 讀取成功時確保樣式正確
             imgElement.onload = function() {
                 this.style.maxHeight = '300px';
                 this.style.opacity = '1';
