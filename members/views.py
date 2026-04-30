@@ -2,17 +2,14 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .models import UserProfile, Product
 from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
 
 # 1. 註冊頁面
 def index(request):
     return render(request, 'register.html')
 
-# 2. 註冊邏輯 (加入 Email 大小寫去重與重複檢查)
-@csrf_exempt
+# 2. 註冊邏輯
 def register(request):
     if request.method == 'POST':
-        # 正規化 Email：去空白並強制轉小寫
         email_input = request.POST.get('email', '').strip().lower()
         nickname_input = request.POST.get('nickname')
         gender_input = request.POST.get('gender')
@@ -20,10 +17,9 @@ def register(request):
         password_input = request.POST.get('password')
 
         try:
-            # 檢查 Email 是否已存在 (不論當初存大寫還是小寫)
             if UserProfile.objects.filter(email=email_input).exists():
                 messages.error(request, "此電子郵件已被註冊過囉！請直接登入或更換 Email。")
-                return redirect('/') # 導回註冊頁面
+                return redirect('/')
 
             UserProfile.objects.create(
                 email=email_input,
@@ -38,10 +34,9 @@ def register(request):
             return HttpResponse(f"發生錯誤：{str(e)}")
     return HttpResponse("請使用 POST 方法")
 
-# 3. 登入邏輯 (加入 Email 小寫處理與新手引導判斷)
+# 3. 登入邏輯
 def login_view(request):
     if request.method == 'POST':
-        # 登入時也轉小寫，確保跟資料庫中小寫的 email 匹配
         email_input = request.POST.get('email', '').strip().lower()
         password_input = request.POST.get('password')
         try:
@@ -49,7 +44,7 @@ def login_view(request):
             if user.password == password_input:
                 request.session['user_email'] = user.email
                 
-                # 新手引導判斷：如果喜好清單是空的，帶去設定頁
+                # 新手引導判斷：如果喜好清單是空的
                 if not user.favorites:
                     return redirect('/setup/')
                 return redirect('/data/')
@@ -66,6 +61,7 @@ def setup_preferences(request):
     
     try:
         user = UserProfile.objects.get(email=user_email)
+        # 取得所有不重複的分類
         categories = Product.objects.values_list('category', flat=True).distinct().order_by('category')
         
         if request.method == 'POST':
@@ -85,7 +81,7 @@ def setup_preferences(request):
     except UserProfile.DoesNotExist:
         return redirect('/login/')
 
-# 4. 優惠資訊頁面
+# 4. 優惠資訊頁面 (包含類別顯示)
 def data_view(request):
     user_email = request.session.get('user_email')
     if not user_email: return redirect('/login/')
@@ -94,6 +90,8 @@ def data_view(request):
         user = UserProfile.objects.get(email=user_email)
         products = Product.objects.all().order_by('-date')
         categories = Product.objects.values_list('category', flat=True).distinct().order_by('category')
+        
+        # 安全處理 favorites 可能為空或 None 的情況
         user_favs = user.favorites.split(',') if user.favorites else []
         
         context = {
@@ -106,17 +104,22 @@ def data_view(request):
     except UserProfile.DoesNotExist:
         return redirect('/login/')
 
-# 儲存喜愛類別邏輯 (供主頁面鈴鐺按鈕使用)
+# 儲存喜愛類別邏輯 (處理你遇到的 403 錯誤)
 def save_favorites(request):
     user_email = request.session.get('user_email')
     if not user_email: return redirect('/login/')
 
     if request.method == 'POST':
-        selected_cats = request.POST.getlist('fav_categories')
-        user = UserProfile.objects.get(email=user_email)
-        user.favorites = ",".join(selected_cats)
-        user.save()
-        messages.success(request, "喜好類別已更新！")
+        try:
+            selected_cats = request.POST.getlist('fav_categories')
+            user = UserProfile.objects.get(email=user_email)
+            # 即使 selected_cats 是空的，也會儲存為空字串，代表取消所有選取
+            user.favorites = ",".join(selected_cats)
+            user.save()
+            messages.success(request, "喜好類別已更新！")
+        except Exception as e:
+            messages.error(request, f"儲存失敗：{str(e)}")
+    
     return redirect('/data/')
 
 # 5. 修改個人資料
