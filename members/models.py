@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone # 新增引入
 
 # 1. 使用者資料
 class UserProfile(models.Model):
@@ -8,8 +9,14 @@ class UserProfile(models.Model):
     gender = models.CharField(max_length=10)
     birthday = models.DateField()
     password = models.CharField(max_length=128)
+    
     # 儲存喜愛的類別，以逗號隔開的字串儲存
     favorites = models.TextField(default="", blank=True)
+    
+    # 【新增欄位】：記錄使用者註冊時間
+    # auto_now_add=True 會在建立資料時自動填入當下時間
+    # null=True, blank=True 讓現有的舊資料可以接受空值，避免資料庫報錯
+    date_joined = models.DateField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
         return self.nickname

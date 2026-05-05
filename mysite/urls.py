@@ -2,14 +2,15 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView  # 新增這行：引入 RedirectView 模組
 from members import views 
 
 urlpatterns = [
     # 1. 管理員後台
     path('admin/', admin.site.urls),
 
-    # 2. 註冊頁面 (首頁)
-    path('', views.index, name='index'),
+    # 2. 首頁：設定為自動跳轉到登入頁面 (/login/)
+    path('', RedirectView.as_view(url='/login/', permanent=False), name='index'),
 
     # 3. 處理註冊動作
     path('register/', views.register, name='register'),
@@ -29,6 +30,7 @@ urlpatterns = [
     # 8. 登出動作
     path('logout/', views.logout_view, name='logout'),
 
+    # 9. 設定偏好
     path('setup/', views.setup_preferences, name='setup_preferences'),
 ]
 
