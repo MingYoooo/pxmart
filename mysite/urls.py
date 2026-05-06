@@ -10,7 +10,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # 2. 首頁：設定為自動跳轉到登入頁面 (/login/)
-    path('', RedirectView.as_view(url='/login/', permanent=False), name='index'),
+    path('', RedirectView.as_view(url='/login/', permanent=False)),
+
+    # 🌟 新增這裡：把原本的註冊畫面 (views.index) 獨立到 /signup/ 這個網址
+    path('signup/', views.index, name='signup'),
 
     # 3. 處理註冊動作
     path('register/', views.register, name='register'),
