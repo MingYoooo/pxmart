@@ -23,38 +23,47 @@ async function sendDailyDeals() {
     return;
   }
 
+  // 取得今天的日期並歸零時間
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
     
+    // 如果沒有 email、沒有喜好，或沒有註冊時間，就跳過
     if (!user.email || !user.favorites || !user.date_joined) continue;
 
     try {
+      // --- 生命週期郵件日期判斷邏輯 ---
       const joinDate = new Date(user.date_joined);
       joinDate.setHours(0, 0, 0, 0);
 
       const diffTime = Math.abs(today - joinDate);
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
+      // 判斷是否「不符合」寄信條件
       if (diffDays === 0) {
         console.log(`⏸️ 跳過 ${user.email} (今天剛註冊，明天才會發送首封)`);
         continue;
-      } else if (diffDays > 1 && (diffDays - 1) % 3 !== 0) { 
+      } else if (diffDays > 1 && (diffDays - 1) % 3 !== 0) { // <--- 這裡改成了 % 3
         console.log(`⏸️ 跳過 ${user.email} (註冊第 ${diffDays} 天 - 未達每三天寄送日)`);
         continue;
       }
 
+      // 印出準備發送的提示
       if (diffDays === 1) {
         console.log(`🎯 準備發送給 ${user.email} (註冊第 ${diffDays} 天 - 首次通知)`);
       } else {
-        console.log(`🎯 準備發送給 ${user.email} (註冊第 ${diffDays} 天 - 每三天定期通知)`); 
+        console.log(`🎯 準備發送給 ${user.email} (註冊第 ${diffDays} 天 - 每三天定期通知)`); // <--- 這裡改了文字
       }
+      // --- 日期判斷邏輯結束 ---
 
+      // B. 處理喜好類別
       const favoriteList = user.favorites.split(/[、,]/).map(item => item.trim()).filter(item => item !== "");
+      
       let allUserProducts = [];
 
+      // C. 抓取所有符合條件的商品
       for (const fav of favoriteList) {
         const { data: products, error: prodError } = await supabase
           .from('pxmart_data')
@@ -67,6 +76,7 @@ async function sendDailyDeals() {
         }
       }
 
+      // D. 移除重複商品
       const uniqueProducts = Array.from(new Set(allUserProducts.map(a => a.品名)))
         .map(品名 => allUserProducts.find(a => a.品名 === 品名));
 

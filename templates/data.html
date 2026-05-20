@@ -197,6 +197,7 @@
             z-index: 1050;
             background-color: #f39c12; 
             color: white;
+            /* 👇 這裡加大了 padding 和字體大小 */
             padding: 16px 32px; 
             font-size: 1.15rem; 
             border-radius: 35px; 
@@ -209,6 +210,7 @@
         }
 
         .float-feedback-btn i {
+            /* 👇 把 Icon 也稍微放大 */
             font-size: 1.3rem; 
         }
 
@@ -216,29 +218,6 @@
             transform: translateY(-5px);
             box-shadow: 0 8px 20px rgba(243, 156, 18, 0.4);
             color: white;
-        }
-
-        /* 🌟 頁腳資料來源樣式 */
-        .site-footer {
-            background-color: #fff;
-            border-top: 1px solid #eee;
-            padding: 40px 0;
-            margin-top: 50px;
-            color: #6c757d;
-        }
-        .footer-source-link {
-            color: var(--px-blue);
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .footer-source-link:hover {
-            text-decoration: underline;
-        }
-        .disclaimer-box {
-            font-size: 0.85rem;
-            max-width: 800px;
-            margin: 15px auto 0;
-            line-height: 1.6;
         }
 
         @keyframes fadeIn {
@@ -359,24 +338,6 @@
                 </a>
             </div>
         </div>
-
-        <!-- 🌟 新增的 Footer 資料來源區塊 -->
-        <footer class="site-footer text-center">
-            <div class="container">
-                <p class="mb-2">© 2026 聯手省錢 - 專題製作小組</p>
-                <p class="mb-2">
-                    <i class="fas fa-database me-1"></i> 資料來源：
-                    <a href="https://www.pxmart.com.tw/" target="_blank" class="footer-source-link">全聯福利中心官方網站 (PX Mart)</a>
-                </p>
-                <p class="mb-3">
-                    <i class="fas fa-envelope me-1"></i> 聯絡我們：
-                    <a href="mailto:pxmartautomation@gmail.com" class="footer-source-link">pxmartautomation@gmail.com</a>
-                </p>
-                <div class="disclaimer-box text-muted">
-                    <p><strong>免責聲明：</strong> 本網站為學生個人專題開發作品，僅供學術交流與技術實作展示之用。站內所使用之商標、圖片及商品資訊版權皆屬「全聯實業股份有限公司」所有。本站不保證資料之即時性，且不進行任何商業營利行為。</p>
-                </div>
-            </div>
-        </footer>
 
     </div>
 

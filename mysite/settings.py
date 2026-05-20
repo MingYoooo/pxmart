@@ -5,6 +5,10 @@ mysite 專案的 Django 設定檔。
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# 讀取 .env 檔案中的變數
+load_dotenv()
 
 # 建立專案內部的路徑
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,7 +35,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # <-- [新增] 用於在生產環境處理靜態檔案（圖片/CSS/JS）
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # 用於在生產環境處理靜態檔案
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -60,15 +64,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
-# 資料庫設定 (Supabase PostgreSQL)
+# 資料庫設定 (使用 .env 環境變數)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.ktdiyxfdioejabztjkfi',
-        'PASSWORD': 'SaveMoney20266',
-        'HOST': 'aws-1-ap-southeast-1.pooler.supabase.com',
-        'PORT': '6543',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -94,7 +98,7 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-# [新增] 告訴 Django 在執行 collectstatic 時將所有靜態檔案收集到這個資料夾
+# 告訴 Django 在執行 collectstatic 時將所有靜態檔案收集到這個資料夾
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # 媒體檔案 (使用者上傳或下載的商品圖片)
